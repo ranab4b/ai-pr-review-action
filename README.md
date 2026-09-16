@@ -67,7 +67,7 @@ flowchart LR
              api-key: ${{ secrets.ANTHROPIC_API_KEY }}
    ```
 
-That's it — the action reads `GITHUB_TOKEN` automatically for posting comments and opening issues.
+That's it — the action reads `GITHUB_TOKEN` automatically for posting comments and opening issues. The `pull-requests: write` and `issues: write` permissions shown above are required, or the action will fail when it tries to comment or create an issue.
 
 ### Inputs
 
