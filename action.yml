@@ -1,0 +1,45 @@
+name: 'AI PR Review'
+description: 'Reviews a pull request diff with an LLM, posts a summary comment, and opens issues for flagged follow-up work.'
+author: 'ranab4b'
+branding:
+  icon: 'eye'
+  color: 'purple'
+
+inputs:
+  api-key:
+    description: 'API key for the LLM provider. Required.'
+    required: true
+  api-url:
+    description: "LLM API endpoint to call. Defaults to Anthropic's Messages API."
+    required: false
+    default: 'https://api.anthropic.com/v1/messages'
+  model:
+    description: 'Model name to request from the LLM provider.'
+    required: false
+    default: 'claude-sonnet-5'
+  github-token:
+    description: 'Token used to read the PR diff and post comments/issues. Defaults to the workflow token.'
+    required: false
+    default: ${{ github.token }}
+  diff-file:
+    description: 'Path to a local diff file to review instead of fetching one from a pull_request event. Used for self-testing without a live PR.'
+    required: false
+    default: ''
+  create-issues:
+    description: 'Whether to open a GitHub issue for each flagged follow-up item.'
+    required: false
+    default: 'true'
+
+outputs:
+  summary:
+    description: 'The plain-English review summary produced by the LLM.'
+  risks:
+    description: 'JSON array of risk strings identified in the diff.'
+  todo-items:
+    description: 'JSON array of follow-up items identified in the diff.'
+  comment-posted:
+    description: '"true" if a review comment was posted on a pull request, "false" in self-test/local-diff mode.'
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'

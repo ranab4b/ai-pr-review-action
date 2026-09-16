@@ -1,0 +1,37 @@
+name: Self-Test
+
+# Proves the action works end-to-end (diff -> LLM -> structured findings)
+# without needing a live external PR: it runs the action against the
+# committed fixture diff on every push.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  self-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run AI PR Review against fixture diff
+        id: review
+        uses: ./
+        with:
+          api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          diff-file: fixtures/sample-diff.patch
+
+      - name: Show results
+        run: |
+          echo "Summary: ${{ steps.review.outputs.summary }}"
+          echo "Risks: ${{ steps.review.outputs.risks }}"
+          echo "Todo items: ${{ steps.review.outputs.todo-items }}"
+
+      - name: Fail if no structured output was produced
+        run: |
+          if [ -z "${{ steps.review.outputs.summary }}" ]; then
+            echo "Expected a non-empty summary from the self-test run." >&2
+            exit 1
+          fi

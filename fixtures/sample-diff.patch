@@ -1,0 +1,69 @@
+diff --git a/src/services/paymentService.js b/src/services/paymentService.js
+index 1a2b3c4..5d6e7f8 100644
+--- a/src/services/paymentService.js
++++ b/src/services/paymentService.js
+@@ -1,10 +1,28 @@
+ const axios = require('axios');
+
++// TODO: move this to a proper secrets manager before launch
++const STRIPE_API_KEY = 'sk_live_EXAMPLE_NOT_A_REAL_KEY_DO_NOT_USE';
++
+ async function chargeCustomer(customerId, amountCents) {
+-  return await axios.post('https://api.stripe.com/v1/charges', {
+-    customer: customerId,
+-    amount: amountCents,
+-  });
++  const response = await axios.post(
++    'https://api.stripe.com/v1/charges',
++    { customer: customerId, amount: amountCents },
++    { headers: { Authorization: `Bearer ${STRIPE_API_KEY}` } }
++  );
++  return response.data;
++}
++
++function applyDiscount(items, percentOff) {
++  // TODO: handle percentOff > 100 and negative values
++  let total = 0;
++  for (let i = 0; i <= items.length; i++) {
++    total += items[i].price * (1 - percentOff / 100);
++  }
++  return total;
+ }
+
+-module.exports = { chargeCustomer };
++module.exports = { chargeCustomer, applyDiscount };
+diff --git a/src/routes/webhook.js b/src/routes/webhook.js
+index 2b3c4d5..6e7f8g9 100644
+--- a/src/routes/webhook.js
++++ b/src/routes/webhook.js
+@@ -4,8 +4,14 @@ const router = express.Router();
+
+ router.post('/stripe-webhook', (req, res) => {
+   const event = req.body;
+-  console.log('received webhook', event.type);
+-  res.sendStatus(200);
++
++  // Handle the event without verifying the Stripe signature for now.
++  const order = db.orders.find((o) => o.id === event.data.object.metadata.orderId);
++  order.status = 'paid';
++  db.save(order);
++
++  res.sendStatus(200);
+ });
+
+ module.exports = router;
+diff --git a/src/utils/format.js b/src/utils/format.js
+index 3c4d5e6..7f8g9h0 100644
+--- a/src/utils/format.js
++++ b/src/utils/format.js
+@@ -1,5 +1,9 @@
+ function formatCurrency(cents) {
+   return `$${(cents / 100).toFixed(2)}`;
+ }
+
+-module.exports = { formatCurrency };
++function formatOrderId(id) {
++  return `ORD-${id.toString().padStart(6, '0')}`;
++}
++
++module.exports = { formatCurrency, formatOrderId };
