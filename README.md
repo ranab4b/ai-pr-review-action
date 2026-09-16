@@ -2,6 +2,8 @@
 
 Problem: code review bandwidth doesn't scale with team size.
 
+> ⚠️ **Required secret:** this action needs an LLM API key added as a repo secret before its workflows will run. See [Setup](#setup) below. Without it, `Self-Test` and `AI PR Review` fail immediately with `Input required and not supplied: api-key`.
+
 ## What it does
 
 On every PR: reads the diff → sends it to an LLM → posts a structured summary comment → opens a GitHub issue for anything flagged as follow-up work.
@@ -43,7 +45,13 @@ flowchart LR
 
 ## Setup
 
-1. Add your LLM provider's API key as a repo secret, e.g. `ANTHROPIC_API_KEY` (Settings → Secrets and variables → Actions).
+1. **Add your LLM provider's API key as a repo secret** — this is the one required step:
+   1. Get an API key from your LLM provider (e.g. an [Anthropic API key](https://console.anthropic.com/settings/keys)).
+   2. In this repo on GitHub, go to **Settings → Secrets and variables → Actions → New repository secret**.
+   3. Name it `ANTHROPIC_API_KEY` (or whatever name you reference in your workflow), paste the key as the value, and click **Add secret**.
+
+   Until this secret exists, every workflow that runs this action — including `Self-Test` and `AI PR Review` in this repo — will fail with `Input required and not supplied: api-key`.
+
 2. Add a workflow like the following (see `.github/workflows/pr-review.yml` in this repo for a working example):
 
    ```yaml
@@ -95,7 +103,7 @@ That's it — the action reads `GITHUB_TOKEN` automatically for posting comments
 
 ## Self-test
 
-`.github/workflows/self-test.yml` runs the action against the committed fixture diff (`fixtures/sample-diff.patch`) on every push to `main`, so you can see the action produce real, structured findings without needing a live PR. It still calls the real LLM API (using the same `ANTHROPIC_API_KEY` secret), it just skips posting a comment or opening issues since there's no PR to post to.
+`.github/workflows/self-test.yml` runs the action against the committed fixture diff (`fixtures/sample-diff.patch`) on every push to `main`, so you can see the action produce real, structured findings without needing a live PR. It still calls the real LLM API (using the same `ANTHROPIC_API_KEY` secret — see [Setup](#setup) if it isn't set yet), it just skips posting a comment or opening issues since there's no PR to post to.
 
 **Result on the fixture diff:** `[MEASURE AFTER BUILD]` risks and `[MEASURE AFTER BUILD]` follow-up items correctly identified, vs. a 2-minute manual read of the same diff.
 
